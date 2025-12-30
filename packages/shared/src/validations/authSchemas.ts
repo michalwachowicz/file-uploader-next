@@ -1,16 +1,10 @@
 import { z } from "zod";
 
 /**
- * Schema for user registration validation.
- *
- * Validates username (3-20 characters) and password:
- * - Minimum 8 characters
- * - At least one lowercase letter
- * - At least one uppercase letter
- * - At least one number
- * - At least one special character
+ * Base schema for user registration (username and password only).
+ * Used for API validation.
  */
-export const registerSchema = z.object({
+const registerBaseSchema = z.object({
   username: z
     .string()
     .min(3, "Username must be at least 3 characters")
@@ -33,6 +27,26 @@ export const registerSchema = z.object({
 });
 
 /**
+ * Schema for user registration validation (frontend form).
+ *
+ * Validates username (3-20 characters) and password:
+ * - Minimum 8 characters
+ * - At least one lowercase letter
+ * - At least one uppercase letter
+ * - At least one number
+ * - At least one special character
+ * - Password confirmation must match
+ */
+export const registerSchema = registerBaseSchema
+  .extend({
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+/**
  * Schema for user login validation.
  *
  * Validates username and password are provided.
@@ -43,9 +57,19 @@ export const loginSchema = z.object({
 });
 
 /**
- * TypeScript type inferred from registerSchema.
+ * Schema for API registration (username and password only, no confirmPassword).
  */
-export type RegisterInput = z.infer<typeof registerSchema>;
+export const registerApiSchema = registerBaseSchema;
+
+/**
+ * TypeScript type inferred from registerApiSchema (for API calls).
+ */
+export type RegisterInput = z.infer<typeof registerApiSchema>;
+
+/**
+ * TypeScript type inferred from registerSchema (for form validation).
+ */
+export type RegisterFormInput = z.infer<typeof registerSchema>;
 
 /**
  * TypeScript type inferred from loginSchema.
