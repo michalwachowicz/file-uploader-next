@@ -1,2 +1,6 @@
-**/node_modules
-**/.env
+node_modules/
+dist/
+generated/
+*.log
+.env
+.DS_Store
