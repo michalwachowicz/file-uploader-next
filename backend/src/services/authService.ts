@@ -2,8 +2,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 import { config } from "@/lib/config";
-import { RegisterInput, LoginInput } from "@file-uploader/shared";
-import { AuthResponse, JwtPayload } from "@/types/authTypes";
+import { RegisterInput, LoginInput, AuthResponse } from "@file-uploader/shared";
+import { JwtPayload } from "@/types/authTypes";
 
 const SALT_ROUNDS = 10;
 const TOKEN_EXPIRES_IN = "7d";
