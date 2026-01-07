@@ -104,7 +104,6 @@ describe("RegisterForm", () => {
     const user = userEvent.setup();
     mockRegister.mockResolvedValue({
       user: { id: "1", username: "testuser", createdAt: new Date() },
-      token: "test-token",
     });
 
     render(<RegisterForm />);
@@ -172,7 +171,6 @@ describe("RegisterForm", () => {
 
     resolveRegister!({
       user: { id: "1", username: "testuser", createdAt: new Date() },
-      token: "test-token",
     });
 
     await waitFor(() => {
@@ -188,7 +186,6 @@ describe("RegisterForm", () => {
       .mockRejectedValueOnce(new Error("Username already exists"))
       .mockResolvedValueOnce({
         user: { id: "1", username: "newuser", createdAt: new Date() },
-        token: "test-token",
       });
 
     render(<RegisterForm />);

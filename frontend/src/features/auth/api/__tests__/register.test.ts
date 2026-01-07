@@ -21,7 +21,6 @@ describe("register", () => {
           username: "newuser",
           createdAt: new Date(),
         },
-        token: "test-token-123",
       },
     };
 

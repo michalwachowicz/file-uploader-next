@@ -1,17 +1,20 @@
 import apiClient from "@/shared/api/client";
-import { RegisterInput, AuthResponse } from "@file-uploader/shared";
+import { RegisterInput, RegisterResponse } from "@file-uploader/shared";
 import { AxiosError } from "axios";
 
 /**
  * Registers a new user account.
  *
  * @param data - User registration credentials (username and password)
- * @returns Promise resolving to authentication response with user data and JWT token
+ * @returns Promise resolving to registration response with user data (no token)
  * @throws {Error} If registration fails (username already exists, validation errors, etc.)
  */
-export async function register(data: RegisterInput): Promise<AuthResponse> {
+export async function register(data: RegisterInput): Promise<RegisterResponse> {
   try {
-    const response = await apiClient.post<AuthResponse>("/auth/register", data);
+    const response = await apiClient.post<RegisterResponse>(
+      "/auth/register",
+      data
+    );
 
     return response.data;
   } catch (error) {

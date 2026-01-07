@@ -1,5 +1,5 @@
 import apiClient, { setToken } from "@/shared/api/client";
-import { LoginInput, AuthResponse } from "@file-uploader/shared";
+import { LoginInput, LoginResponse } from "@file-uploader/shared";
 import { AxiosError } from "axios";
 
 /**
@@ -9,9 +9,9 @@ import { AxiosError } from "axios";
  * @returns Promise resolving to authentication response with user data and JWT token
  * @throws {Error} If login fails (invalid credentials, validation errors, etc.)
  */
-export async function login(data: LoginInput): Promise<AuthResponse> {
+export async function login(data: LoginInput): Promise<LoginResponse> {
   try {
-    const response = await apiClient.post<AuthResponse>("/auth/login", data);
+    const response = await apiClient.post<LoginResponse>("/auth/login", data);
     const { token } = response.data;
 
     // Store token in cookies for subsequent requests

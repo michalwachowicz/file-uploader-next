@@ -2,7 +2,12 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 import { config } from "@/lib/config";
-import { RegisterInput, LoginInput, AuthResponse } from "@file-uploader/shared";
+import {
+  RegisterInput,
+  LoginInput,
+  LoginResponse,
+  RegisterResponse,
+} from "@file-uploader/shared";
 import { JwtPayload } from "@/types/authTypes";
 
 const SALT_ROUNDS = 10;
@@ -40,15 +45,16 @@ export function verifyToken(token: string): JwtPayload {
  * Registers a new user in the system.
  *
  * Validates the input, checks for existing users, hashes the password,
- * creates the user record, and returns a JWT token.
+ * and creates the user record. Does not return a token since users must
+ * log in after registration.
  *
  * Note: Input validation is handled by Zod schema in validateRequest middleware
  *
  * @param data - User registration credentials (username and password)
- * @returns Promise resolving to an authentication response with user data and JWT token
+ * @returns Promise resolving to a registration response with user data (no token)
  * @throws {Error} If validation fails or username already exists
  */
-export async function register(data: RegisterInput): Promise<AuthResponse> {
+export async function register(data: RegisterInput): Promise<RegisterResponse> {
   const { username, password } = data;
 
   const existingUser = await prisma.user.findUnique({
@@ -73,14 +79,8 @@ export async function register(data: RegisterInput): Promise<AuthResponse> {
     },
   });
 
-  const token = generateToken({
-    userId: user.id,
-    username: user.username,
-  });
-
   return {
     user,
-    token,
   };
 }
 
@@ -96,7 +96,7 @@ export async function register(data: RegisterInput): Promise<AuthResponse> {
  * @returns Promise resolving to an authentication response with user data and JWT token
  * @throws {Error} If validation fails or user not found or password is invalid
  */
-export async function login(data: LoginInput): Promise<AuthResponse> {
+export async function login(data: LoginInput): Promise<LoginResponse> {
   const { username, password } = data;
 
   const user = await prisma.user.findUnique({
