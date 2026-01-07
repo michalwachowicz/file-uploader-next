@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { InputHTMLAttributes } from "react";
 import type { FieldError } from "react-hook-form";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   /**
    * React Hook Form field error for the input field.
    */
