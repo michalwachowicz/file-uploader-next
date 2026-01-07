@@ -4,6 +4,7 @@
   --color-background: var(--color-slate-950);
   --color-foreground: var(--color-slate-200);
   --color-primary: var(--color-indigo-600);
+  --color-primary-light: var(--color-indigo-500);
   --color-error: var(--color-red-600);
 }
 
