@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as authController from "@/controllers/authController";
 import { validateRequest } from "@/middleware/validateRequest";
+import { authenticate } from "@/middleware/authenticate";
 import { registerApiSchema, loginSchema } from "@file-uploader/shared";
 
 const router = Router();
@@ -11,5 +12,6 @@ router.post(
   authController.register
 );
 router.post("/login", validateRequest(loginSchema), authController.login);
+router.get("/me", authenticate, authController.me);
 
 export default router;

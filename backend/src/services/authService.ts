@@ -7,6 +7,7 @@ import {
   LoginInput,
   LoginResponse,
   RegisterResponse,
+  UserResponse,
 } from "@file-uploader/shared";
 import { JwtPayload } from "@/types/authTypes";
 
@@ -125,5 +126,36 @@ export async function login(data: LoginInput): Promise<LoginResponse> {
       createdAt: user.createdAt,
     },
     token,
+  };
+}
+
+/**
+ * Retrieves user information by user ID.
+ *
+ * Fetches the user from the database and returns their information.
+ * Used for authenticated endpoints that need to return current user data.
+ *
+ * @param userId - The unique identifier of the user
+ * @returns Promise resolving to user response data
+ * @throws {Error} If user is not found
+ */
+export async function getUser(userId: string): Promise<UserResponse> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      username: true,
+      createdAt: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return {
+    id: user.id,
+    username: user.username,
+    createdAt: user.createdAt,
   };
 }
