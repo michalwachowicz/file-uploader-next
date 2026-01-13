@@ -50,7 +50,7 @@ export function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className='flex flex-col gap-5 w-full max-w-md mx-auto'
+      className='flex flex-col gap-5 w-full max-w-md mx-auto px-0'
     >
       <Input
         label='Username'
