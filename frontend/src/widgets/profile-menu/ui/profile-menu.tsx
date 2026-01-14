@@ -1,0 +1,36 @@
+"use client";
+
+import { removeUserToken } from "@/features/auth/lib";
+import { Routes } from "@/shared/lib/routes";
+import { Menu, MenuItem, MenuList, MenuTrigger } from "@/shared/ui";
+import { UserResponse } from "@file-uploader/shared";
+import { useRouter } from "next/navigation";
+import { AccountIcon } from "@/widgets/profile-menu/assets/icons";
+
+export function ProfileMenu({ user }: { user: UserResponse }) {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await removeUserToken();
+    router.push(Routes.AUTH_LOGIN);
+  };
+
+  return (
+    <Menu>
+      <MenuTrigger className='flex items-center gap-2.5'>
+        <AccountIcon className='size-8 text-slate-400' />
+        <span className='hidden sm:inline text-lg font-bold text-slate-400'>
+          {user.username}
+        </span>
+      </MenuTrigger>
+      <MenuList>
+        <MenuItem onSelect={() => router.push(Routes.SETTINGS)}>
+          Settings
+        </MenuItem>
+        <MenuItem onSelect={handleLogout} className='text-red-500'>
+          Logout
+        </MenuItem>
+      </MenuList>
+    </Menu>
+  );
+}
