@@ -26,7 +26,9 @@ export async function getFolder(
     const isOwner = folder.ownerId === req.userId;
 
     if (!isOwner) {
-      const isShareValid = await folderService.hasValidShareInAncestors(folder);
+      const isShareValid = await folderService.hasValidShareInAncestors(
+        folder.id
+      );
 
       if (!isShareValid) {
         res.status(403).json({
@@ -38,8 +40,6 @@ export async function getFolder(
 
     res.json({
       folder,
-      folders: folder.subfolders || [],
-      files: folder.files || [],
       isOwner,
     });
   } catch (error) {

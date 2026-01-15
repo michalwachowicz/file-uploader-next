@@ -1,11 +1,25 @@
 import { prisma } from "@/lib/prisma";
-import { Folder, File } from "../../generated/prisma/client";
+import {
+  Folder,
+  FolderNode,
+  FolderWithSubfoldersAndFiles,
+} from "@file-uploader/shared";
 
-export type FolderNode = Folder & { subfolders: FolderNode[] };
-export type FolderWithSubfoldersAndFiles = Folder & {
-  subfolders?: Folder[];
-  files?: File[];
-};
+/**
+ * Converts a Prisma Folder to a FolderNode.
+ */
+function folderToFolderNode(folder: Folder): FolderNode {
+  return {
+    id: folder.id,
+    name: folder.name,
+    ownerId: folder.ownerId,
+    parentId: folder.parentId,
+    shareExpiresAt: folder.shareExpiresAt,
+    createdAt: folder.createdAt,
+    updatedAt: folder.updatedAt,
+    subfolders: [],
+  };
+}
 
 /**
  * Gets the folder tree structure for a specific owner.
@@ -20,7 +34,9 @@ export async function getFolderTreeForOwner(
   const idToNode = new Map<string, FolderNode>();
   const roots: FolderNode[] = [];
 
-  for (const f of folders) idToNode.set(f.id, { ...f, subfolders: [] });
+  for (const f of folders) {
+    idToNode.set(f.id, folderToFolderNode(f));
+  }
   for (const f of folders) {
     const node = idToNode.get(f.id);
     if (f.parentId) {
@@ -61,17 +77,17 @@ export async function getFolderById(
 /**
  * Checks if a folder has a valid share link in any of its ancestor folders.
  *
- * @param folder - The folder to check
+ * @param folderId - The ID of the folder to check
  * @returns Promise resolving to true if a valid share exists in ancestors
  */
 export async function hasValidShareInAncestors(
-  folder: Folder
+  folderId: string
 ): Promise<boolean> {
   const rows = await prisma.$queryRaw<Array<{ found: boolean }>>`
     WITH RECURSIVE ancestors AS (
       SELECT "id", "parentId", "shareExpiresAt"
       FROM "Folder"
-      WHERE "id" = ${folder.id}::uuid
+      WHERE "id" = ${folderId}::uuid
       UNION ALL
       SELECT f."id", f."parentId", f."shareExpiresAt"
       FROM "Folder" f
