@@ -21,6 +21,12 @@ vi.mock("@/widgets/header/assets/icons", () => ({
   ),
 }));
 
+vi.mock("@/shared/assets/icons", () => ({
+  ArrowDropdownIcon: ({ className }: { className?: string }) => (
+    <svg data-testid='arrow-dropdown-icon' className={className} />
+  ),
+}));
+
 describe("ProfileMenu", () => {
   const mockPush = vi.fn();
   const mockClearUser = vi.fn();
@@ -52,6 +58,7 @@ describe("ProfileMenu", () => {
 
     expect(screen.getByText("testuser")).toBeInTheDocument();
     expect(screen.getByTestId("account-icon")).toBeInTheDocument();
+    expect(screen.getByTestId("arrow-dropdown-icon")).toBeInTheDocument();
   });
 
   it("renders menu trigger button", () => {

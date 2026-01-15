@@ -6,6 +6,7 @@ import { Menu, MenuItem, MenuList, MenuTrigger } from "@/shared/ui";
 import { UserResponse } from "@file-uploader/shared";
 import { useRouter } from "next/navigation";
 import { AccountIcon } from "@/widgets/header/assets/icons";
+import { ArrowDropdownIcon } from "@/shared/assets/icons";
 
 export function ProfileMenu({ user }: { user: UserResponse }) {
   const router = useRouter();
@@ -19,11 +20,14 @@ export function ProfileMenu({ user }: { user: UserResponse }) {
 
   return (
     <Menu>
-      <MenuTrigger className='flex items-center gap-2.5'>
-        <AccountIcon className='size-8 text-slate-400' />
-        <span className='hidden sm:inline text-lg font-bold text-slate-400'>
-          {user.username}
-        </span>
+      <MenuTrigger className='flex items-center gap-1 sm:gap-2.5 text-slate-400'>
+        <AccountIcon className='size-8' />
+        <div className='flex items-center gap-1'>
+          <span className='hidden sm:inline text-lg font-bold'>
+            {user.username}
+          </span>
+          <ArrowDropdownIcon className='size-5' />
+        </div>
       </MenuTrigger>
       <MenuList>
         <MenuItem onSelect={() => router.push(Routes.SETTINGS)}>
