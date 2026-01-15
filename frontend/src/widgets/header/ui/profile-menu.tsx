@@ -1,17 +1,19 @@
 "use client";
 
-import { removeUserToken } from "@/features/auth/lib";
+import { removeUserToken, useUserActions } from "@/features/auth/lib";
 import { Routes } from "@/shared/lib/routes";
 import { Menu, MenuItem, MenuList, MenuTrigger } from "@/shared/ui";
 import { UserResponse } from "@file-uploader/shared";
 import { useRouter } from "next/navigation";
-import { AccountIcon } from "@/widgets/profile-menu/assets/icons";
+import { AccountIcon } from "@/widgets/header/assets/icons";
 
 export function ProfileMenu({ user }: { user: UserResponse }) {
   const router = useRouter();
+  const { clearUser } = useUserActions();
 
   const handleLogout = async () => {
     await removeUserToken();
+    clearUser();
     router.push(Routes.AUTH_LOGIN);
   };
 

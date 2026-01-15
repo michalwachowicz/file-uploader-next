@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { Header } from "@/widgets/header/ui/header";
 
-vi.mock("@/widgets/profile-menu/ui", () => ({
+vi.mock("@/widgets/header/ui/profile-menu", () => ({
   ProfileMenu: vi.fn(({ user }: { user: { id: string; username: string } }) => (
     <div data-testid='profile-menu'>{user.username}</div>
   )),

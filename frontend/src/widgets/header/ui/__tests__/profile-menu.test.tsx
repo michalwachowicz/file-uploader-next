@@ -1,8 +1,8 @@
 import userEvent from "@testing-library/user-event";
 import { render, screen, waitFor } from "@testing-library/react";
-import { ProfileMenu } from "@/widgets/profile-menu/ui/profile-menu";
+import { ProfileMenu } from "@/widgets/header/ui/profile-menu";
 import { useRouter } from "next/navigation";
-import { removeUserToken } from "@/features/auth/lib";
+import { removeUserToken, useUserActions } from "@/features/auth/lib";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
@@ -10,9 +10,12 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/features/auth/lib", () => ({
   removeUserToken: vi.fn(),
+  useUserActions: vi.fn(() => ({
+    clearUser: vi.fn(),
+  })),
 }));
 
-vi.mock("@/widgets/profile-menu/assets/icons", () => ({
+vi.mock("@/widgets/header/assets/icons", () => ({
   AccountIcon: ({ className }: { className?: string }) => (
     <svg data-testid='account-icon' className={className} />
   ),
@@ -20,6 +23,8 @@ vi.mock("@/widgets/profile-menu/assets/icons", () => ({
 
 describe("ProfileMenu", () => {
   const mockPush = vi.fn();
+  const mockClearUser = vi.fn();
+  const mockSetUser = vi.fn();
   const mockUser = {
     id: "123",
     username: "testuser",
@@ -36,6 +41,10 @@ describe("ProfileMenu", () => {
       forward: vi.fn(),
       prefetch: vi.fn(),
     } as ReturnType<typeof useRouter>);
+    vi.mocked(useUserActions).mockReturnValue({
+      setUser: mockSetUser,
+      clearUser: mockClearUser,
+    });
   });
 
   it("renders correctly", () => {
@@ -83,7 +92,7 @@ describe("ProfileMenu", () => {
     expect(mockPush).toHaveBeenCalledWith("/settings");
   });
 
-  it("calls removeUserToken and navigates to login when Logout is clicked", async () => {
+  it("calls removeUserToken, clearUser and navigates to login when Logout is clicked", async () => {
     const user = userEvent.setup();
     vi.mocked(removeUserToken).mockResolvedValue(undefined);
 
@@ -101,6 +110,7 @@ describe("ProfileMenu", () => {
 
     await waitFor(() => {
       expect(removeUserToken).toHaveBeenCalledOnce();
+      expect(mockClearUser).toHaveBeenCalledOnce();
       expect(mockPush).toHaveBeenCalledWith("/auth/login");
     });
   });
