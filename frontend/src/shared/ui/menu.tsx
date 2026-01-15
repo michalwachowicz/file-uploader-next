@@ -22,6 +22,7 @@ interface MenuContextValue {
   setIsOpen: (open: boolean) => void;
   menuId: string;
   triggerId: string;
+  position: MenuPosition;
 }
 
 const MenuContext = createContext<MenuContextValue | null>(null);
@@ -33,6 +34,8 @@ function useMenuContext() {
   }
   return context;
 }
+
+type MenuPosition = "bottom-right" | "bottom-left" | "top-right" | "top-left";
 
 interface MenuProps extends HTMLAttributes<HTMLDivElement> {
   /**
@@ -52,6 +55,11 @@ interface MenuProps extends HTMLAttributes<HTMLDivElement> {
    */
   defaultOpen?: boolean;
   /**
+   * Optional position of the menu list relative to the trigger.
+   * @default "bottom-right"
+   */
+  position?: MenuPosition;
+  /**
    * Optional additional CSS classes for the menu container.
    */
   className?: string;
@@ -66,6 +74,7 @@ export function Menu({
   open: controlledOpen,
   onOpenChange,
   defaultOpen = false,
+  position = "bottom-right",
   className,
   ...props
 }: MenuProps) {
@@ -114,7 +123,9 @@ export function Menu({
   }, [isOpen, setIsOpen]);
 
   return (
-    <MenuContext.Provider value={{ isOpen, setIsOpen, menuId, triggerId }}>
+    <MenuContext.Provider
+      value={{ isOpen, setIsOpen, menuId, triggerId, position }}
+    >
       <div ref={menuRef} className={clsx("relative", className)} {...props}>
         {children}
       </div>
@@ -245,7 +256,7 @@ export interface MenuListProps extends HTMLAttributes<HTMLUListElement> {
  * MenuList component - container for menu items.
  */
 export function MenuList({ children, className, ...props }: MenuListProps) {
-  const { isOpen, menuId, triggerId } = useMenuContext();
+  const { isOpen, menuId, triggerId, position } = useMenuContext();
   const listRef = useRef<HTMLUListElement>(null);
 
   // Keyboard navigation
@@ -279,6 +290,13 @@ export function MenuList({ children, className, ...props }: MenuListProps) {
 
   if (!isOpen) return null;
 
+  const positionClasses = {
+    "bottom-right": "top-full right-0 mt-1",
+    "bottom-left": "top-full left-0 mt-1",
+    "top-right": "bottom-full right-0 mb-1",
+    "top-left": "bottom-full left-0 mb-1",
+  };
+
   return (
     <ul
       ref={listRef}
@@ -287,7 +305,7 @@ export function MenuList({ children, className, ...props }: MenuListProps) {
       aria-labelledby={triggerId}
       className={clsx(
         "absolute z-50 min-w-[220px] bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 focus:outline-none",
-        "top-full right-0 mt-1",
+        positionClasses[position],
         className
       )}
       {...props}
