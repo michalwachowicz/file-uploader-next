@@ -392,3 +392,10 @@ export function MenuItem({
     </li>
   );
 }
+
+/**
+ * MenuSeparator component - separator between menu items.
+ */
+export function MenuSeparator() {
+  return <li role='separator' className='h-px my-1 bg-slate-700' />;
+}
