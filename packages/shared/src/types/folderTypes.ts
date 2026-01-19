@@ -57,3 +57,19 @@ export interface GetFolderResponse {
   folder: FolderWithSubfoldersAndFiles;
   isOwner: boolean;
 }
+
+/**
+ * Breadcrumb item for folder navigation.
+ */
+export interface FolderBreadcrumb {
+  id: string;
+  name: string;
+  shareExpiresAt: Date | string | null;
+}
+
+/**
+ * Response from the get folder breadcrumbs API endpoint.
+ */
+export interface GetFolderBreadcrumbsResponse {
+  breadcrumbs: FolderBreadcrumb[];
+}
