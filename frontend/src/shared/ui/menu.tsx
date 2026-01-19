@@ -324,10 +324,6 @@ export interface MenuItemProps extends HTMLAttributes<HTMLLIElement> {
    */
   children: ReactNode;
   /**
-   * Optional click handler.
-   */
-  onSelect?: () => void;
-  /**
    * Optional additional CSS classes.
    */
   className?: string;
@@ -356,7 +352,7 @@ export function MenuItem({
       return;
     }
     onClick?.(e);
-    onSelect?.();
+    onSelect?.(e);
     setIsOpen(false);
   };
 
@@ -365,7 +361,7 @@ export function MenuItem({
 
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      onSelect?.();
+      onSelect?.(e);
       setIsOpen(false);
     }
   };
