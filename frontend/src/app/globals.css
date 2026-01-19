@@ -13,3 +13,13 @@ body {
   color: var(--color-foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+button:focus,
+input:focus,
+textarea:focus,
+select:focus,
+a:focus,
+[tabindex]:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
