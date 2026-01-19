@@ -6,13 +6,18 @@ import { AuthRequest } from "@/middleware/authenticate";
 /**
  * Gets a folder by ID with its subfolders and files.
  *
+ * Access is granted if:
+ * - User is the owner of the folder
+ * - Folder itself has a valid share (shareExpiresAt is valid)
+ * - Any ancestor folder has a valid share
+ *
  * @param req - Express request with folder ID in params and user info from authenticate middleware
  * @param res - Express response object
  * @returns Promise that resolves when the response is sent
  */
 export async function getFolder(
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> {
   try {
     const { id } = req.params;
@@ -26,11 +31,21 @@ export async function getFolder(
     const isOwner = folder.ownerId === req.userId;
 
     if (!isOwner) {
-      const isShareValid = await folderService.hasValidShareInAncestors(
-        folder.id
+      const isFolderShared = folderService.isValidShare(folder.shareExpiresAt);
+
+      if (isFolderShared) {
+        res.json({
+          folder,
+          isOwner: false,
+        });
+        return;
+      }
+
+      const isAncestorShared = await folderService.hasValidShareInAncestors(
+        folder.id,
       );
 
-      if (!isShareValid) {
+      if (!isAncestorShared) {
         res.status(403).json({
           error: "You are not allowed to access this folder",
         });
@@ -58,7 +73,7 @@ export async function getFolder(
  */
 export async function createFolder(
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> {
   try {
     const ownerId = req.userId!;
@@ -84,7 +99,7 @@ export async function createFolder(
     const existingFolder = await folderService.getFolderByNameInParent(
       name,
       parentId || null,
-      ownerId
+      ownerId,
     );
 
     if (existingFolder) {
@@ -112,7 +127,7 @@ export async function createFolder(
  */
 export async function deleteFolder(
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> {
   try {
     const { id } = req.params;
@@ -148,7 +163,7 @@ export async function deleteFolder(
  */
 export async function renameFolder(
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> {
   try {
     const ownerId = req.userId!;
@@ -173,7 +188,7 @@ export async function renameFolder(
     const existingFolder = await folderService.getFolderByNameInParent(
       name,
       folder.parentId,
-      ownerId
+      ownerId,
     );
 
     if (existingFolder && existingFolder.id !== id) {
@@ -193,6 +208,59 @@ export async function renameFolder(
 }
 
 /**
+ * Gets root folder contents for the authenticated user.
+ *
+ * @param req - Express request with user info from authenticate middleware
+ * @param res - Express response object
+ * @returns Promise that resolves when the response is sent
+ */
+export async function getRootFolder(
+  req: AuthRequest,
+  res: Response,
+): Promise<void> {
+  try {
+    const ownerId = req.userId!;
+    const rootFolder = await folderService.getRootFolderContents(ownerId);
+
+    res.json({
+      folder: rootFolder,
+      isOwner: true,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+}
+
+/**
+ * Gets breadcrumbs for a folder.
+ *
+ * Returns path from root to folder for owned folders,
+ * or from first shared ancestor to folder for shared folders.
+ *
+ * @param req - Express request with folder ID in params and user info from authenticate middleware
+ * @param res - Express response object
+ * @returns Promise that resolves when the response is sent
+ */
+export async function getFolderBreadcrumbs(
+  req: AuthRequest,
+  res: Response,
+): Promise<void> {
+  try {
+    const { id } = req.params;
+    const userId = req.userId!;
+
+    const breadcrumbs = await folderService.getFolderBreadcrumbs(id, userId);
+    res.json({ breadcrumbs });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+}
+
+/**
  * Gets the folder tree structure for the authenticated user.
  *
  * @param req - Express request with user info from authenticate middleware
@@ -201,7 +269,7 @@ export async function renameFolder(
  */
 export async function getFolderTree(
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> {
   try {
     const ownerId = req.userId!;
