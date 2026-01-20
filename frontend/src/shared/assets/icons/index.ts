@@ -4,3 +4,7 @@ export { default as CloseIcon } from "./close.svg";
 export { default as FileIcon } from "./file.svg";
 export { default as FolderIcon } from "./folder.svg";
 export { default as FolderSharedIcon } from "./folder-shared.svg";
+export { default as MoreIcon } from "./more.svg";
+export { default as EditIcon } from "./edit.svg";
+export { default as DeleteIcon } from "./delete.svg";
+export { default as ShareIcon } from "./share.svg";
