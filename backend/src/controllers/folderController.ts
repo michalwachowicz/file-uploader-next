@@ -189,6 +189,13 @@ export async function renameFolder(
       return;
     }
 
+    if (folder.name === name) {
+      res.status(400).json({
+        error: "The new name must be different from the current name",
+      });
+      return;
+    }
+
     const existingFolder = await folderService.getFolderByNameInParent(
       name,
       folder.parentId,
