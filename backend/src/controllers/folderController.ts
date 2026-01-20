@@ -1,6 +1,10 @@
 import { Response } from "express";
 import * as folderService from "@/services/folderService";
-import { CreateFolderInput, RenameFolderInput } from "@file-uploader/shared";
+import {
+  CreateFolderInput,
+  RenameFolderInput,
+  ShareFolderInput,
+} from "@file-uploader/shared";
 import { AuthRequest } from "@/middleware/authenticate";
 
 /**
@@ -275,6 +279,51 @@ export async function getFolderTree(
     const ownerId = req.userId!;
     const tree = await folderService.getFolderTreeForOwner(ownerId);
     res.json({ folders: tree });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+}
+
+/**
+ * Shares or unshares a folder.
+ *
+ * @param req - Express request with folder ID in params, share data in body, and user info from authenticate middleware
+ * @param res - Express response object
+ * @returns Promise that resolves when the response is sent
+ */
+export async function shareFolder(
+  req: AuthRequest,
+  res: Response,
+): Promise<void> {
+  try {
+    const ownerId = req.userId!;
+    const { id } = req.params;
+    const data: ShareFolderInput = req.body;
+    const { durationHours, indefinite } = data;
+
+    const folder = await folderService.getFolderById(id);
+
+    if (!folder) {
+      res.status(404).json({ error: "Folder not found" });
+      return;
+    }
+
+    if (folder.ownerId !== ownerId) {
+      res.status(403).json({
+        error: "You are not allowed to share this folder",
+      });
+      return;
+    }
+
+    const updatedFolder = await folderService.shareFolder(
+      id,
+      durationHours,
+      indefinite,
+      ownerId,
+    );
+    res.json({ folder: updatedFolder });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Internal server error";

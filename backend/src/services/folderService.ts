@@ -360,3 +360,51 @@ export async function renameFolder(
     data: { name: newName },
   });
 }
+
+/**
+ * Shares or unshares a folder.
+ *
+ * @param id - The folder ID
+ * @param durationHours - Number of hours to share (null to unshare)
+ * @param indefinite - If true, share indefinitely (overrides durationHours)
+ * @param ownerId - The owner ID (for authorization)
+ * @returns Promise resolving to the updated folder
+ * @throws {Error} If folder not found or unauthorized
+ */
+export async function shareFolder(
+  id: string,
+  durationHours: number | null | undefined,
+  indefinite: boolean | undefined,
+  ownerId: string,
+): Promise<Folder> {
+  const folder = await prisma.folder.findUnique({
+    where: { id },
+  });
+
+  if (!folder) {
+    throw new Error("Folder not found");
+  }
+
+  if (folder.ownerId !== ownerId) {
+    throw new Error("You are not allowed to share this folder");
+  }
+
+  let shareExpiresAt: Date | null;
+
+  if (indefinite === true) {
+    shareExpiresAt = new Date();
+    shareExpiresAt.setFullYear(shareExpiresAt.getFullYear() + 100);
+  } else if (durationHours === null) {
+    shareExpiresAt = null;
+  } else if (durationHours !== undefined && durationHours > 0) {
+    shareExpiresAt = new Date();
+    shareExpiresAt.setHours(shareExpiresAt.getHours() + durationHours);
+  } else {
+    throw new Error("Either durationHours or indefinite must be provided");
+  }
+
+  return await prisma.folder.update({
+    where: { id },
+    data: { shareExpiresAt },
+  });
+}

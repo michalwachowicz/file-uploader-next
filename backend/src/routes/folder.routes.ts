@@ -2,7 +2,11 @@ import { Router } from "express";
 import * as folderController from "@/controllers/folderController";
 import { validateRequest } from "@/middleware/validateRequest";
 import { authenticate } from "@/middleware/authenticate";
-import { createFolderSchema, renameFolderSchema } from "@file-uploader/shared";
+import {
+  createFolderSchema,
+  renameFolderSchema,
+  shareFolderSchema,
+} from "@file-uploader/shared";
 
 const router = Router();
 
@@ -29,5 +33,11 @@ router.put(
 );
 
 router.delete("/:id", folderController.deleteFolder);
+
+router.post(
+  "/:id/share",
+  validateRequest(shareFolderSchema),
+  folderController.shareFolder,
+);
 
 export default router;
