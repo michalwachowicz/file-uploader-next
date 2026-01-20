@@ -1,8 +1,5 @@
-import axios from "axios";
-import apiClient from "@/shared/api/client";
 import { CreateFolderInput, Folder } from "@file-uploader/shared";
-import { AxiosError } from "axios";
-import { config } from "@/shared/lib/config";
+import { apiRequest } from "@/shared/api/wrapper";
 
 /**
  * Creates a new folder.
@@ -17,34 +14,14 @@ import { config } from "@/shared/lib/config";
  */
 export async function createFolder(
   data: CreateFolderInput,
-  token?: string
+  token?: string,
 ): Promise<Folder> {
-  try {
-    // Server-side: use axios with explicit token
-    if (token) {
-      const response = await axios.post<{ folder: Folder }>(
-        `${config.apiUrl}/folders`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      return response.data.folder;
-    }
-
-    // Client-side: use apiClient (token from cookies via interceptor)
-    const response = await apiClient.post<{ folder: Folder }>("/folders", data);
-    return response.data.folder;
-  } catch (error) {
-    const axiosError = error as AxiosError<{ error?: string }>;
-    const errorMessage =
-      axiosError.response?.data?.error ||
-      axiosError.message ||
-      "Failed to create folder";
-
-    throw new Error(errorMessage);
-  }
+  return apiRequest<Folder>({
+    method: "POST",
+    path: "/folders",
+    data,
+    token,
+    defaultErrorMessage: "Failed to create folder",
+    extractData: (response) => (response.data as { folder: Folder }).folder,
+  });
 }

@@ -1,8 +1,5 @@
-import axios from "axios";
-import apiClient from "@/shared/api/client";
 import { ShareFolderInput, Folder } from "@file-uploader/shared";
-import { AxiosError } from "axios";
-import { config } from "@/shared/lib/config";
+import { apiRequest } from "@/shared/api/wrapper";
 
 /**
  * Shares or unshares a folder.
@@ -21,35 +18,12 @@ export async function shareFolder(
   data: ShareFolderInput,
   token?: string,
 ): Promise<Folder> {
-  try {
-    // Server-side: use axios with explicit token
-    if (token) {
-      const response = await axios.post<{ folder: Folder }>(
-        `${config.apiUrl}/folders/${id}/share`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      return response.data.folder;
-    }
-
-    // Client-side: use apiClient (token from cookies via interceptor)
-    const response = await apiClient.post<{ folder: Folder }>(
-      `/folders/${id}/share`,
-      data,
-    );
-    return response.data.folder;
-  } catch (error) {
-    const axiosError = error as AxiosError<{ error?: string }>;
-    const errorMessage =
-      axiosError.response?.data?.error ||
-      axiosError.message ||
-      "Failed to share folder";
-
-    throw new Error(errorMessage);
-  }
+  return apiRequest<Folder>({
+    method: "POST",
+    path: `/folders/${id}/share`,
+    data,
+    token,
+    defaultErrorMessage: "Failed to share folder",
+    extractData: (response) => (response.data as { folder: Folder }).folder,
+  });
 }

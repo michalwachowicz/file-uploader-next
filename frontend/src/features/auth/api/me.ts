@@ -1,8 +1,5 @@
-import apiClient from "@/shared/api/client";
 import { UserResponse } from "@file-uploader/shared";
-import { AxiosError } from "axios";
-import axios from "axios";
-import { config } from "@/shared/lib/config";
+import { apiRequest } from "@/shared/api/wrapper";
 
 /**
  * Fetches the current authenticated user's information.
@@ -15,31 +12,10 @@ import { config } from "@/shared/lib/config";
  * @throws {Error} If the request fails or user is not authenticated
  */
 export async function me(token?: string): Promise<UserResponse> {
-  try {
-    // Server-side: use axios with explicit token
-    if (token) {
-      const response = await axios.get<UserResponse>(
-        `${config.apiUrl}/auth/me`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      return response.data;
-    }
-
-    // Client-side: use apiClient (token from cookies via interceptor)
-    const response = await apiClient.get<UserResponse>("/auth/me");
-    return response.data;
-  } catch (error) {
-    const axiosError = error as AxiosError<{ error?: string }>;
-    const errorMessage =
-      axiosError.response?.data?.error ||
-      axiosError.message ||
-      "Failed to fetch user";
-
-    throw new Error(errorMessage);
-  }
+  return apiRequest<UserResponse>({
+    method: "GET",
+    path: "/auth/me",
+    token,
+    defaultErrorMessage: "Failed to fetch user",
+  });
 }

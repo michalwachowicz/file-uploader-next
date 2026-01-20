@@ -1,8 +1,5 @@
-import axios from "axios";
-import apiClient from "@/shared/api/client";
 import { GetFolderBreadcrumbsResponse } from "@file-uploader/shared";
-import { AxiosError } from "axios";
-import { config } from "@/shared/lib/config";
+import { apiRequest } from "@/shared/api/wrapper";
 
 /**
  * Fetches breadcrumbs for a folder.
@@ -19,33 +16,10 @@ export async function getFolderBreadcrumbs(
   id: string,
   token?: string,
 ): Promise<GetFolderBreadcrumbsResponse> {
-  try {
-    // Server-side: use axios with explicit token
-    if (token) {
-      const response = await axios.get<GetFolderBreadcrumbsResponse>(
-        `${config.apiUrl}/folders/${id}/breadcrumbs`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      return response.data;
-    }
-
-    // Client-side: use apiClient (token from cookies via interceptor)
-    const response = await apiClient.get<GetFolderBreadcrumbsResponse>(
-      `/folders/${id}/breadcrumbs`,
-    );
-    return response.data;
-  } catch (error) {
-    const axiosError = error as AxiosError<{ error?: string }>;
-    const errorMessage =
-      axiosError.response?.data?.error ||
-      axiosError.message ||
-      "Failed to fetch folder breadcrumbs";
-
-    throw new Error(errorMessage);
-  }
+  return apiRequest<GetFolderBreadcrumbsResponse>({
+    method: "GET",
+    path: `/folders/${id}/breadcrumbs`,
+    token,
+    defaultErrorMessage: "Failed to fetch folder breadcrumbs",
+  });
 }

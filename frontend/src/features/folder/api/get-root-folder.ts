@@ -1,8 +1,5 @@
-import axios from "axios";
-import apiClient from "@/shared/api/client";
 import { GetFolderResponse } from "@file-uploader/shared";
-import { AxiosError } from "axios";
-import { config } from "@/shared/lib/config";
+import { apiRequest } from "@/shared/api/wrapper";
 
 /**
  * Fetches root folder contents (root folders and root files).
@@ -17,31 +14,10 @@ import { config } from "@/shared/lib/config";
 export async function getRootFolder(
   token?: string,
 ): Promise<GetFolderResponse> {
-  try {
-    // Server-side: use axios with explicit token
-    if (token) {
-      const response = await axios.get<GetFolderResponse>(
-        `${config.apiUrl}/folders/root`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      return response.data;
-    }
-
-    // Client-side: use apiClient (token from cookies via interceptor)
-    const response = await apiClient.get<GetFolderResponse>(`/folders/root`);
-    return response.data;
-  } catch (error) {
-    const axiosError = error as AxiosError<{ error?: string }>;
-    const errorMessage =
-      axiosError.response?.data?.error ||
-      axiosError.message ||
-      "Failed to fetch root folder";
-
-    throw new Error(errorMessage);
-  }
+  return apiRequest<GetFolderResponse>({
+    method: "GET",
+    path: "/folders/root",
+    token,
+    defaultErrorMessage: "Failed to fetch root folder",
+  });
 }

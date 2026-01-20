@@ -1,8 +1,5 @@
-import axios from "axios";
-import apiClient from "@/shared/api/client";
 import { FolderTreeResponse } from "@file-uploader/shared";
-import { AxiosError } from "axios";
-import { config } from "@/shared/lib/config";
+import { apiRequest } from "@/shared/api/wrapper";
 
 /**
  * Fetches the folder tree structure for the authenticated user.
@@ -15,33 +12,12 @@ import { config } from "@/shared/lib/config";
  * @throws {Error} If the request fails
  */
 export async function getFolderTree(
-  token?: string
+  token?: string,
 ): Promise<FolderTreeResponse> {
-  try {
-    // Server-side: use axios with explicit token
-    if (token) {
-      const response = await axios.get<FolderTreeResponse>(
-        `${config.apiUrl}/folders/tree`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      return response.data;
-    }
-
-    // Client-side: use apiClient (token from cookies via interceptor)
-    const response = await apiClient.get<FolderTreeResponse>("/folders/tree");
-    return response.data;
-  } catch (error) {
-    const axiosError = error as AxiosError<{ error?: string }>;
-    const errorMessage =
-      axiosError.response?.data?.error ||
-      axiosError.message ||
-      "Failed to fetch folder tree";
-
-    throw new Error(errorMessage);
-  }
+  return apiRequest<FolderTreeResponse>({
+    method: "GET",
+    path: "/folders/tree",
+    token,
+    defaultErrorMessage: "Failed to fetch folder tree",
+  });
 }

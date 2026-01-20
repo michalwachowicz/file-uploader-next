@@ -1,11 +1,13 @@
-import { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { login } from "@/features/auth/api/login";
-import apiClient, { setToken } from "@/shared/api/client";
+import { apiRequest } from "@/shared/api/wrapper";
+import { setToken } from "@/shared/api/client";
+import { LoginResponse } from "@file-uploader/shared";
+
+vi.mock("@/shared/api/wrapper", () => ({
+  apiRequest: vi.fn(),
+}));
 
 vi.mock("@/shared/api/client", () => ({
-  default: {
-    post: vi.fn(),
-  },
   setToken: vi.fn(),
 }));
 
@@ -14,75 +16,33 @@ describe("login", () => {
     vi.clearAllMocks();
   });
 
-  it("successfully logs in and stores token", async () => {
-    const mockResponse = {
-      data: {
-        user: {
-          id: "123",
-          username: "testuser",
-          createdAt: new Date(),
-        },
-        token: "test-token-123",
+  it("calls apiRequest and stores token", async () => {
+    const mockResponse: LoginResponse = {
+      user: {
+        id: "123",
+        username: "testuser",
+        createdAt: new Date().toISOString(),
       },
+      token: "test-token-123",
     };
 
-    (apiClient.post as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockResponse
-    );
+    (apiRequest as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
 
     const result = await login({
       username: "testuser",
       password: "password123",
     });
 
-    expect(apiClient.post).toHaveBeenCalledWith("/auth/login", {
-      username: "testuser",
-      password: "password123",
+    expect(apiRequest).toHaveBeenCalledWith({
+      method: "POST",
+      path: "/auth/login",
+      data: {
+        username: "testuser",
+        password: "password123",
+      },
+      defaultErrorMessage: "Login failed",
     });
     expect(setToken).toHaveBeenCalledWith("test-token-123");
-    expect(result).toEqual(mockResponse.data);
-  });
-
-  it("throws error with message from API response", async () => {
-    const mockError: AxiosError<{ error?: string }> = {
-      response: {
-        data: { error: "Invalid credentials" },
-        status: 401,
-        statusText: "Unauthorized",
-        headers: {},
-        config: {} as InternalAxiosRequestConfig,
-      },
-    } as AxiosError<{ error?: string }>;
-
-    (apiClient.post as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
-
-    await expect(
-      login({ username: "testuser", password: "wrong" })
-    ).rejects.toThrow("Invalid credentials");
-    expect(setToken).not.toHaveBeenCalled();
-  });
-
-  it("throws error with axios error message when no response data", async () => {
-    const mockError: AxiosError = {
-      message: "Network Error",
-    } as AxiosError;
-
-    (apiClient.post as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
-
-    await expect(
-      login({ username: "testuser", password: "password" })
-    ).rejects.toThrow("Network Error");
-    expect(setToken).not.toHaveBeenCalled();
-  });
-
-  it("throws default error message when error has no message", async () => {
-    const mockError = {};
-
-    (apiClient.post as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
-
-    await expect(
-      login({ username: "testuser", password: "password" })
-    ).rejects.toThrow("Login failed");
-    expect(setToken).not.toHaveBeenCalled();
+    expect(result).toEqual(mockResponse);
   });
 });

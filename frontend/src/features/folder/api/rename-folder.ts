@@ -1,8 +1,5 @@
-import axios from "axios";
-import apiClient from "@/shared/api/client";
 import { RenameFolderInput, Folder } from "@file-uploader/shared";
-import { AxiosError } from "axios";
-import { config } from "@/shared/lib/config";
+import { apiRequest } from "@/shared/api/wrapper";
 
 /**
  * Renames a folder.
@@ -21,35 +18,12 @@ export async function renameFolder(
   data: RenameFolderInput,
   token?: string,
 ): Promise<Folder> {
-  try {
-    // Server-side: use axios with explicit token
-    if (token) {
-      const response = await axios.put<{ folder: Folder }>(
-        `${config.apiUrl}/folders/${id}`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      return response.data.folder;
-    }
-
-    // Client-side: use apiClient (token from cookies via interceptor)
-    const response = await apiClient.put<{ folder: Folder }>(
-      `/folders/${id}`,
-      data,
-    );
-    return response.data.folder;
-  } catch (error) {
-    const axiosError = error as AxiosError<{ error?: string }>;
-    const errorMessage =
-      axiosError.response?.data?.error ||
-      axiosError.message ||
-      "Failed to rename folder";
-
-    throw new Error(errorMessage);
-  }
+  return apiRequest<Folder>({
+    method: "PUT",
+    path: `/folders/${id}`,
+    data,
+    token,
+    defaultErrorMessage: "Failed to rename folder",
+    extractData: (response) => (response.data as { folder: Folder }).folder,
+  });
 }

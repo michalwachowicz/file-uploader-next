@@ -1,7 +1,4 @@
-import axios from "axios";
-import apiClient from "@/shared/api/client";
-import { AxiosError } from "axios";
-import { config } from "@/shared/lib/config";
+import { apiRequest } from "@/shared/api/wrapper";
 
 /**
  * Deletes a folder and all its contents.
@@ -15,27 +12,10 @@ import { config } from "@/shared/lib/config";
  * @throws {Error} If the request fails
  */
 export async function deleteFolder(id: string, token?: string): Promise<void> {
-  try {
-    // Server-side: use axios with explicit token
-    if (token) {
-      await axios.delete(`${config.apiUrl}/folders/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      return;
-    }
-
-    // Client-side: use apiClient (token from cookies via interceptor)
-    await apiClient.delete(`/folders/${id}`);
-  } catch (error) {
-    const axiosError = error as AxiosError<{ error?: string }>;
-    const errorMessage =
-      axiosError.response?.data?.error ||
-      axiosError.message ||
-      "Failed to delete folder";
-
-    throw new Error(errorMessage);
-  }
+  return apiRequest<void>({
+    method: "DELETE",
+    path: `/folders/${id}`,
+    token,
+    defaultErrorMessage: "Failed to delete folder",
+  });
 }
