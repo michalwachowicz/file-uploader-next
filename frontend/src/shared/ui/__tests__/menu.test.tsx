@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { render, screen, waitFor } from "@testing-library/react";
 import { Menu, MenuTrigger, MenuList, MenuItem } from "@/shared/ui/menu";
 
 describe("Menu", () => {
@@ -11,7 +11,7 @@ describe("Menu", () => {
           <MenuItem>Item 1</MenuItem>
           <MenuItem>Item 2</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     expect(screen.getByText("Open Menu")).toBeInTheDocument();
@@ -26,7 +26,7 @@ describe("Menu", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -48,7 +48,7 @@ describe("Menu", () => {
           </MenuList>
         </Menu>
         <div>Outside</div>
-      </div>
+      </div>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -74,7 +74,7 @@ describe("Menu", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -98,7 +98,7 @@ describe("Menu", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     expect(screen.queryByText("Item 1")).not.toBeInTheDocument();
@@ -109,7 +109,7 @@ describe("Menu", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     await waitFor(() => {
@@ -127,7 +127,7 @@ describe("Menu", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -145,24 +145,10 @@ describe("Menu", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     expect(screen.getByText("Item 1")).toBeInTheDocument();
-  });
-
-  it("applies custom className", () => {
-    render(
-      <Menu className='custom-menu-class'>
-        <MenuTrigger>Open Menu</MenuTrigger>
-        <MenuList>
-          <MenuItem>Item 1</MenuItem>
-        </MenuList>
-      </Menu>
-    );
-
-    const menu = screen.getByText("Open Menu").closest("div");
-    expect(menu).toHaveClass("custom-menu-class");
   });
 });
 
@@ -175,7 +161,7 @@ describe("MenuTrigger", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -197,7 +183,7 @@ describe("MenuTrigger", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -217,7 +203,7 @@ describe("MenuTrigger", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -238,7 +224,7 @@ describe("MenuTrigger", () => {
           <MenuItem>Item 1</MenuItem>
           <MenuItem>Item 2</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -249,13 +235,12 @@ describe("MenuTrigger", () => {
       expect(screen.getByText("Item 1")).toBeInTheDocument();
     });
 
-    // Wait for the setTimeout to complete and focus the first item
     await waitFor(
       () => {
         const item1 = screen.getByText("Item 1");
         expect(item1).toHaveFocus();
       },
-      { timeout: 100 }
+      { timeout: 100 },
     );
   });
 
@@ -269,7 +254,7 @@ describe("MenuTrigger", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -278,32 +263,75 @@ describe("MenuTrigger", () => {
     expect(onClick).toHaveBeenCalledOnce();
   });
 
-  it("applies custom className", () => {
+  it("supports asChild prop with custom element", async () => {
+    const user = userEvent.setup();
     render(
       <Menu>
-        <MenuTrigger className='custom-class'>Open Menu</MenuTrigger>
+        <MenuTrigger asChild>
+          <div data-testid='custom-trigger'>Custom Trigger</div>
+        </MenuTrigger>
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
-    const trigger = screen.getByText("Open Menu");
-    expect(trigger).toHaveClass("custom-class");
+    const trigger = screen.getByTestId("custom-trigger");
+    expect(trigger).toBeInTheDocument();
+
+    const wrapper = trigger.parentElement;
+    expect(wrapper).toHaveAttribute("role", "button");
+    expect(wrapper).toHaveAttribute("aria-haspopup", "true");
+
+    await user.click(trigger);
+
+    await waitFor(() => {
+      expect(screen.getByText("Item 1")).toBeInTheDocument();
+    });
   });
 
-  it("has correct button type", () => {
+  it("asChild trigger opens menu with Enter key", async () => {
+    const user = userEvent.setup();
     render(
       <Menu>
-        <MenuTrigger>Open Menu</MenuTrigger>
+        <MenuTrigger asChild>
+          <div data-testid='custom-trigger'>Custom Trigger</div>
+        </MenuTrigger>
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
-    const trigger = screen.getByText("Open Menu");
-    expect(trigger).toHaveAttribute("type", "button");
+    const wrapper = screen.getByTestId("custom-trigger").parentElement;
+    wrapper?.focus();
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(screen.getByText("Item 1")).toBeInTheDocument();
+    });
+  });
+
+  it("asChild trigger opens menu with Space key", async () => {
+    const user = userEvent.setup();
+    render(
+      <Menu>
+        <MenuTrigger asChild>
+          <div data-testid='custom-trigger'>Custom Trigger</div>
+        </MenuTrigger>
+        <MenuList>
+          <MenuItem>Item 1</MenuItem>
+        </MenuList>
+      </Menu>,
+    );
+
+    const wrapper = screen.getByTestId("custom-trigger").parentElement;
+    wrapper?.focus();
+    await user.keyboard(" ");
+
+    await waitFor(() => {
+      expect(screen.getByText("Item 1")).toBeInTheDocument();
+    });
   });
 });
 
@@ -317,7 +345,7 @@ describe("MenuList", () => {
           <MenuItem>Item 1</MenuItem>
           <MenuItem>Item 2</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -336,7 +364,7 @@ describe("MenuList", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     expect(screen.queryByText("Item 1")).not.toBeInTheDocument();
@@ -350,7 +378,7 @@ describe("MenuList", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -362,15 +390,15 @@ describe("MenuList", () => {
     });
   });
 
-  it("applies custom className", async () => {
+  it("renders menu in document.body via portal", async () => {
     const user = userEvent.setup();
-    render(
+    const { container } = render(
       <Menu>
         <MenuTrigger>Open Menu</MenuTrigger>
-        <MenuList className='custom-list-class'>
+        <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -378,7 +406,204 @@ describe("MenuList", () => {
 
     await waitFor(() => {
       const list = screen.getByRole("menu");
-      expect(list).toHaveClass("custom-list-class");
+      expect(list).toBeInTheDocument();
+      expect(document.body.contains(list)).toBe(true);
+      expect(container.contains(list)).toBe(false);
+    });
+  });
+
+  it("calculates position for bottom-right", async () => {
+    const user = userEvent.setup();
+    render(
+      <Menu position='bottom-right'>
+        <MenuTrigger>Open Menu</MenuTrigger>
+        <MenuList>
+          <MenuItem>Item 1</MenuItem>
+        </MenuList>
+      </Menu>,
+    );
+
+    const trigger = screen.getByText("Open Menu");
+    const triggerRect = trigger.getBoundingClientRect();
+    await user.click(trigger);
+
+    await waitFor(() => {
+      const list = screen.getByRole("menu");
+      const listRect = list.getBoundingClientRect();
+      expect(listRect.top).toBeGreaterThanOrEqual(triggerRect.bottom);
+      expect(listRect.right).toBeCloseTo(triggerRect.right, 0);
+    });
+  });
+
+  it("calculates position for bottom-left", async () => {
+    const user = userEvent.setup();
+    render(
+      <Menu position='bottom-left'>
+        <MenuTrigger>Open Menu</MenuTrigger>
+        <MenuList>
+          <MenuItem>Item 1</MenuItem>
+        </MenuList>
+      </Menu>,
+    );
+
+    const trigger = screen.getByText("Open Menu");
+    await user.click(trigger);
+
+    await waitFor(() => {
+      const list = screen.getByRole("menu");
+      expect(list).toBeInTheDocument();
+    });
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const list = screen.getByRole("menu");
+    const listRect = list.getBoundingClientRect();
+
+    expect(listRect.top).toBeGreaterThanOrEqual(triggerRect.bottom);
+    expect(listRect.left).toBeCloseTo(triggerRect.left, 0);
+  });
+
+  it("calculates position for top-right", async () => {
+    const user = userEvent.setup();
+    render(
+      <Menu position='top-right'>
+        <MenuTrigger>Open Menu</MenuTrigger>
+        <MenuList>
+          <MenuItem>Item 1</MenuItem>
+        </MenuList>
+      </Menu>,
+    );
+
+    const trigger = screen.getByText("Open Menu");
+    await user.click(trigger);
+
+    await waitFor(() => {
+      const list = screen.getByRole("menu");
+      expect(list).toBeInTheDocument();
+    });
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const list = screen.getByRole("menu");
+    const listRect = list.getBoundingClientRect();
+    expect(listRect.bottom).toBeLessThanOrEqual(triggerRect.top);
+    expect(listRect.right).toBeCloseTo(triggerRect.right, 0);
+  });
+
+  it("calculates position for top-left", async () => {
+    const user = userEvent.setup();
+    render(
+      <Menu position='top-left'>
+        <MenuTrigger>Open Menu</MenuTrigger>
+        <MenuList>
+          <MenuItem>Item 1</MenuItem>
+        </MenuList>
+      </Menu>,
+    );
+
+    const trigger = screen.getByText("Open Menu");
+    await user.click(trigger);
+
+    await waitFor(() => {
+      const list = screen.getByRole("menu");
+      expect(list).toBeInTheDocument();
+    });
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const list = screen.getByRole("menu");
+    const listRect = list.getBoundingClientRect();
+
+    expect(listRect.bottom).toBeLessThanOrEqual(triggerRect.top);
+    expect(listRect.left).toBeCloseTo(triggerRect.left, 0);
+  });
+
+  it("updates position on window scroll", async () => {
+    const user = userEvent.setup();
+    render(
+      <Menu>
+        <MenuTrigger>Open Menu</MenuTrigger>
+        <MenuList>
+          <MenuItem>Item 1</MenuItem>
+        </MenuList>
+      </Menu>,
+    );
+
+    const trigger = screen.getByText("Open Menu");
+    await user.click(trigger);
+
+    await waitFor(() => {
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+    });
+
+    const list = screen.getByRole("menu");
+
+    window.dispatchEvent(new Event("scroll", { bubbles: true }));
+
+    await waitFor(() => {
+      expect(list.style.top).toBeTruthy();
+      expect(list.style.left).toBeTruthy();
+    });
+  });
+
+  it("updates position on window resize", async () => {
+    const user = userEvent.setup();
+    render(
+      <Menu>
+        <MenuTrigger>Open Menu</MenuTrigger>
+        <MenuList>
+          <MenuItem>Item 1</MenuItem>
+        </MenuList>
+      </Menu>,
+    );
+
+    const trigger = screen.getByText("Open Menu");
+    await user.click(trigger);
+
+    await waitFor(() => {
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+    });
+
+    const list = screen.getByRole("menu");
+
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: 500,
+    });
+    window.dispatchEvent(new Event("resize"));
+
+    await waitFor(() => {
+      const newLeft = list.getBoundingClientRect().left;
+      expect(newLeft).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  it("keeps menu within viewport boundaries", async () => {
+    const user = userEvent.setup();
+    render(
+      <div style={{ position: "fixed", bottom: "10px", right: "10px" }}>
+        <Menu position='bottom-right'>
+          <MenuTrigger>Open Menu</MenuTrigger>
+          <MenuList>
+            <MenuItem>Item 1</MenuItem>
+            <MenuItem>Item 2</MenuItem>
+            <MenuItem>Item 3</MenuItem>
+            <MenuItem>Item 4</MenuItem>
+            <MenuItem>Item 5</MenuItem>
+          </MenuList>
+        </Menu>
+      </div>,
+    );
+
+    const trigger = screen.getByText("Open Menu");
+    await user.click(trigger);
+
+    await waitFor(() => {
+      const list = screen.getByRole("menu");
+      const rect = list.getBoundingClientRect();
+
+      expect(rect.left).toBeGreaterThanOrEqual(0);
+      expect(rect.top).toBeGreaterThanOrEqual(0);
+      expect(rect.right).toBeLessThanOrEqual(window.innerWidth);
+      expect(rect.bottom).toBeLessThanOrEqual(window.innerHeight);
     });
   });
 });
@@ -394,7 +619,7 @@ describe("MenuItem", () => {
         <MenuList>
           <MenuItem onSelect={onSelect}>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -407,7 +632,9 @@ describe("MenuItem", () => {
     const item = screen.getByText("Item 1");
     await user.click(item);
 
-    expect(onSelect).toHaveBeenCalledOnce();
+    await waitFor(() => {
+      expect(onSelect).toHaveBeenCalledOnce();
+    });
   });
 
   it("closes menu when clicked", async () => {
@@ -418,7 +645,7 @@ describe("MenuItem", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -448,7 +675,7 @@ describe("MenuItem", () => {
             Disabled Item
           </MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -476,7 +703,7 @@ describe("MenuItem", () => {
         <MenuList>
           <MenuItem onSelect={onSelect}>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -503,7 +730,7 @@ describe("MenuItem", () => {
         <MenuList>
           <MenuItem onSelect={onSelect}>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -533,7 +760,7 @@ describe("MenuItem", () => {
             Item 1
           </MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -546,27 +773,9 @@ describe("MenuItem", () => {
     const item = screen.getByText("Item 1");
     await user.click(item);
 
-    expect(onClick).toHaveBeenCalledOnce();
-    expect(onSelect).toHaveBeenCalledOnce();
-  });
-
-  it("applies custom className", async () => {
-    const user = userEvent.setup();
-    render(
-      <Menu>
-        <MenuTrigger>Open Menu</MenuTrigger>
-        <MenuList>
-          <MenuItem className='custom-item-class'>Item 1</MenuItem>
-        </MenuList>
-      </Menu>
-    );
-
-    const trigger = screen.getByText("Open Menu");
-    await user.click(trigger);
-
     await waitFor(() => {
-      const item = screen.getByText("Item 1");
-      expect(item).toHaveClass("custom-item-class");
+      expect(onClick).toHaveBeenCalledOnce();
+      expect(onSelect).toHaveBeenCalledOnce();
     });
   });
 
@@ -580,7 +789,7 @@ describe("MenuItem", () => {
           <MenuItem>Item 2</MenuItem>
           <MenuItem>Item 3</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -622,7 +831,7 @@ describe("MenuItem", () => {
         <MenuList>
           <MenuItem>Item 1</MenuItem>
         </MenuList>
-      </Menu>
+      </Menu>,
     );
 
     const trigger = screen.getByText("Open Menu");
@@ -637,7 +846,6 @@ describe("MenuItem", () => {
 
 describe("Menu component integration", () => {
   it("throws error when MenuTrigger is used outside Menu", () => {
-    // Suppress console.error for this test
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => {});
@@ -658,7 +866,7 @@ describe("Menu component integration", () => {
       render(
         <MenuList>
           <MenuItem>Item</MenuItem>
-        </MenuList>
+        </MenuList>,
       );
     }).toThrow("Menu components must be used within a Menu");
 

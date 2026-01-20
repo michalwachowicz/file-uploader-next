@@ -5,6 +5,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useId,
@@ -13,6 +14,7 @@ import {
   HTMLAttributes,
   useCallback,
 } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Menu context to share state between Menu, MenuTrigger, and MenuItem components.
@@ -23,6 +25,7 @@ interface MenuContextValue {
   menuId: string;
   triggerId: string;
   position: MenuPosition;
+  triggerRef: React.RefObject<HTMLElement | null>;
 }
 
 const MenuContext = createContext<MenuContextValue | null>(null);
@@ -35,7 +38,11 @@ function useMenuContext() {
   return context;
 }
 
-type MenuPosition = "bottom-right" | "bottom-left" | "top-right" | "top-left";
+export type MenuPosition =
+  | "bottom-right"
+  | "bottom-left"
+  | "top-right"
+  | "top-left";
 
 interface MenuProps extends HTMLAttributes<HTMLDivElement> {
   /**
@@ -80,6 +87,7 @@ export function Menu({
 }: MenuProps) {
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement>(null);
 
   const baseId = useId();
   const menuId = `menu-${baseId}`;
@@ -95,14 +103,19 @@ export function Menu({
       }
       onOpenChange?.(open);
     },
-    [isControlled, onOpenChange]
+    [isControlled, onOpenChange],
   );
 
   useEffect(() => {
     if (!isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const isInsideMenuContainer = menuRef.current?.contains(target) ?? false;
+      const menuList = document.getElementById(menuId);
+      const isInsideMenuList = menuList?.contains(target) ?? false;
+
+      if (!isInsideMenuContainer && !isInsideMenuList) {
         setIsOpen(false);
       }
     };
@@ -120,11 +133,11 @@ export function Menu({
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [isOpen, setIsOpen]);
+  }, [isOpen, setIsOpen, menuId]);
 
   return (
     <MenuContext.Provider
-      value={{ isOpen, setIsOpen, menuId, triggerId, position }}
+      value={{ isOpen, setIsOpen, menuId, triggerId, position, triggerRef }}
     >
       <div ref={menuRef} className={clsx("relative", className)} {...props}>
         {children}
@@ -162,7 +175,7 @@ export function MenuTrigger({
   onClick,
   ...props
 }: MenuTriggerProps) {
-  const { isOpen, setIsOpen, triggerId, menuId } = useMenuContext();
+  const { isOpen, setIsOpen, triggerId, menuId, triggerRef } = useMenuContext();
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     onClick?.(e);
@@ -178,7 +191,7 @@ export function MenuTrigger({
       setIsOpen(true);
       setTimeout(() => {
         const firstItem = document.querySelector(
-          `[data-menu-item="${menuId}"]:first-of-type`
+          `[data-menu-item="${menuId}"]:first-of-type`,
         ) as HTMLElement;
         firstItem?.focus();
       }, 0);
@@ -193,6 +206,7 @@ export function MenuTrigger({
   ) {
     return (
       <div
+        ref={triggerRef as React.RefObject<HTMLDivElement>}
         onClick={() => setIsOpen(!isOpen)}
         onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -203,7 +217,7 @@ export function MenuTrigger({
             setIsOpen(true);
             setTimeout(() => {
               const firstItem = document.querySelector(
-                `[data-menu-item="${menuId}"]:first-of-type`
+                `[data-menu-item="${menuId}"]:first-of-type`,
               ) as HTMLElement;
               firstItem?.focus();
             }, 0);
@@ -224,6 +238,7 @@ export function MenuTrigger({
   return (
     <button
       {...props}
+      ref={triggerRef as React.RefObject<HTMLButtonElement>}
       id={triggerId}
       type='button'
       onClick={handleClick}
@@ -256,15 +271,78 @@ export interface MenuListProps extends HTMLAttributes<HTMLUListElement> {
  * MenuList component - container for menu items.
  */
 export function MenuList({ children, className, ...props }: MenuListProps) {
-  const { isOpen, menuId, triggerId, position } = useMenuContext();
+  const { isOpen, menuId, triggerId, position, triggerRef } = useMenuContext();
   const listRef = useRef<HTMLUListElement>(null);
 
-  // Keyboard navigation
+  const MENU_WIDTH = 220;
+
+  const updatePosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    const list = listRef.current;
+    if (!trigger || !list) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const menuHeight = list.offsetHeight || 0;
+
+    let top = 0;
+    let left = 0;
+
+    switch (position) {
+      case "bottom-right":
+        top = rect.bottom + 4;
+        left = rect.right - MENU_WIDTH;
+        break;
+      case "bottom-left":
+        top = rect.bottom + 4;
+        left = rect.left;
+        break;
+      case "top-right":
+        top = rect.top - menuHeight - 4;
+        left = rect.right - MENU_WIDTH;
+        break;
+      case "top-left":
+        top = rect.top - menuHeight - 4;
+        left = rect.left;
+        break;
+    }
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (left + MENU_WIDTH > viewportWidth)
+      left = viewportWidth - MENU_WIDTH - 8;
+    if (left < 8) left = 8;
+
+    if (top + menuHeight > viewportHeight)
+      top = viewportHeight - menuHeight - 8;
+    if (top < 8) top = 8;
+
+    list.style.top = `${top}px`;
+    list.style.left = `${left}px`;
+  }, [position, triggerRef]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !triggerRef.current || !listRef.current) return;
+    updatePosition();
+  }, [isOpen, updatePosition, triggerRef]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [isOpen, updatePosition]);
+
   useEffect(() => {
     if (!isOpen || !listRef.current) return;
 
     const items = listRef.current.querySelectorAll<HTMLElement>(
-      `[data-menu-item="${menuId}"]`
+      `[data-menu-item="${menuId}"]`,
     );
     if (items.length === 0) return;
 
@@ -290,29 +368,24 @@ export function MenuList({ children, className, ...props }: MenuListProps) {
 
   if (!isOpen) return null;
 
-  const positionClasses = {
-    "bottom-right": "top-full right-0 mt-1",
-    "bottom-left": "top-full left-0 mt-1",
-    "top-right": "bottom-full right-0 mb-1",
-    "top-left": "bottom-full left-0 mb-1",
-  };
-
-  return (
+  const menuContent = (
     <ul
       ref={listRef}
       id={menuId}
       role='menu'
       aria-labelledby={triggerId}
       className={clsx(
-        "absolute z-50 min-w-[220px] bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 focus:outline-none",
-        positionClasses[position],
-        className
+        "fixed z-50 bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 focus:outline-none",
+        `min-w-[${MENU_WIDTH}px]`,
+        className,
       )}
       {...props}
     >
       {children}
     </ul>
   );
+
+  return createPortal(menuContent, document.body);
 }
 
 /**
@@ -331,6 +404,12 @@ export interface MenuItemProps extends HTMLAttributes<HTMLLIElement> {
    * Whether the item is disabled.
    */
   disabled?: boolean;
+  /**
+   * Optional callback when item is selected.
+   */
+  onSelect?: (
+    e: React.MouseEvent<HTMLLIElement> | React.KeyboardEvent<HTMLLIElement>,
+  ) => void;
 }
 
 /**
@@ -381,7 +460,7 @@ export function MenuItem({
           "opacity-50 cursor-not-allowed": disabled,
           "hover:bg-slate-700": !disabled,
         },
-        className
+        className,
       )}
     >
       {children}
