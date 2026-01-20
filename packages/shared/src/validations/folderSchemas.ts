@@ -12,7 +12,7 @@ const folderNameValidation = z
   .transform((val) => val.replace(/[<>:"/\\|?*]/g, ""))
   .refine(
     (val) => val.length > 0,
-    "Folder name contains only invalid characters"
+    "Folder name contains only invalid characters",
   );
 
 /**
@@ -31,6 +31,24 @@ export const renameFolderSchema = z.object({
 });
 
 /**
+ * Schema for sharing a folder.
+ * - durationHours: number of hours to share (null to unshare)
+ * - indefinite: if true, share indefinitely (overrides durationHours)
+ * At least one of durationHours or indefinite must be provided.
+ */
+export const shareFolderSchema = z
+  .object({
+    durationHours: z.number().positive().nullable().optional(),
+    indefinite: z.boolean().optional(),
+  })
+  .refine(
+    (data) => data.durationHours !== undefined || data.indefinite !== undefined,
+    {
+      message: "Either durationHours or indefinite must be provided",
+    },
+  );
+
+/**
  * TypeScript type inferred from createFolderSchema.
  */
 export type CreateFolderInput = z.infer<typeof createFolderSchema>;
@@ -39,3 +57,8 @@ export type CreateFolderInput = z.infer<typeof createFolderSchema>;
  * TypeScript type inferred from renameFolderSchema.
  */
 export type RenameFolderInput = z.infer<typeof renameFolderSchema>;
+
+/**
+ * TypeScript type inferred from shareFolderSchema.
+ */
+export type ShareFolderInput = z.infer<typeof shareFolderSchema>;
